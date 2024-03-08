@@ -1,0 +1,106 @@
+services:
+  pgdatabase:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=ny_taxi
+    volumes:
+      - "./ny_taxi_postgres_data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5432:5432"
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - "8080:80"
+    
+
+
+docker run -it \
+ -e POSTGRES_USER="root" \
+ -e POSTGRES_PASSWORD="root" \
+ -e POSTGRES_DB="ny_taxi" \
+ -v $(pwd)/ny_taxi_postgres_data:/var/lib/postgresql/data \
+ -p 5431:5432 \ 
+ postgres:13
+
+## to connect to psotgres first run the 'docker run -it' above and then use pgcli to connect... pgcli -h localhost -p 5431 -U root -d ny_taxi
+
+
+ https://github.com/DataTalksClub/nyc-tlc-data/releases/tag/yellow
+ https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
+
+
+## code to run pgAdmin web based GUI on docker
+
+ docker run -it \
+  -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+  -e PGADMIN_DEFAULT_PASSWORD="root" \
+  -p 8080:80 \
+  dpage/pgadmin4
+
+##network (configuring it so that pgadmin can talk to postgres within the same network on the docker container)
+
+docker run -it \
+ -e POSTGRES_USER="root" \
+ -e POSTGRES_PASSWORD="root" \
+ -e POSTGRES_DB="ny_taxi" \
+ -v $(pwd)/ny_taxi_postgres_data:/var/lib/postgresql/data \
+ -p 5431:5432 \ 
+ --network=pg-network \
+ --name pg-database \
+ postgres:13
+
+  docker run -it \
+  -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+  -e PGADMIN_DEFAULT_PASSWORD="root" \
+  -p 8080:80 \
+   --network=pg-network \
+   --name pgadmin \
+  dpage/pgadmin4
+
+
+
+# running the ingestiom script using argparser on the CLI
+
+URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+
+python ingest_data.py \
+  --user=root \
+  --password=root \
+  --host=localhost \
+  --port=5431 \
+  --db=ny_taxi \
+  --table_name=yellow_taxi_trips \
+  --url=${URL}
+
+
+
+##dockernising data ingestion 
+
+docker build -t taxi_ingest:v001 .
+
+docker run -it --network=pg-network \
+taxi_ingest:v001 \
+  --user=root \
+  --password=root \
+  --host=pg-database\
+  --port=5432 \
+  --db=ny_taxi \
+  --table_name=yellow_taxi_trips \
+  --url=${URL}
+
+
+  # for docker-compose commands:
+
+#for running the docker-compose file a
+docker-compose up 
+
+#for running the docker-compose file and fire up the services - only difference here is that it will detach back to the CLI without the need to exit or CTR-C
+docker-compose up -d 
+
+#for sotpping the docker-compose services
+docker-compose down 

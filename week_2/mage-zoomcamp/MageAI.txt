@@ -1,0 +1,19 @@
+for getting latest updates of mageai: 
+
+run this command: 
+
+docker pull mageai/mageai:latest
+
+
+
+to run docker compose container: 
+
+docker-compose up -d 
+
+and to stop/kill it:
+
+docker-compose down
+
+or use CTRL-C if not in detached mode (-d)
+
+
